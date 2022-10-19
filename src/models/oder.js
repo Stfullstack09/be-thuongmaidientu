@@ -14,12 +14,8 @@ module.exports = (sequelize, DataTypes) => {
     Oder.init(
         {
             userId: DataTypes.INTEGER,
-            firstName: DataTypes.STRING,
-            lastName: DataTypes.STRING,
-            email: DataTypes.STRING,
+            statusId: DataTypes.STRING,
             phoneNumber: DataTypes.STRING,
-            address: DataTypes.STRING,
-            note: DataTypes.STRING,
             totalMoney: DataTypes.INTEGER,
         },
         {

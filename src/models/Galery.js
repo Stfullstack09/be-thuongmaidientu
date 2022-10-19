@@ -15,6 +15,7 @@ module.exports = (sequelize, DataTypes) => {
         {
             productId: DataTypes.INTEGER,
             thumbnailId: DataTypes.TEXT('long'),
+            // listImage: DataTypes.ARRAY(DataTypes.DECIMAL),
         },
         {
             sequelize,

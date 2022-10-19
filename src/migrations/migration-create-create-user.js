@@ -23,6 +23,12 @@ module.exports = {
             address: {
                 type: Sequelize.STRING,
             },
+            gender: {
+                type: Sequelize.STRING,
+            },
+            avatar: {
+                type: Sequelize.TEXT('long'),
+            },
             roleId: {
                 type: Sequelize.STRING,
             },

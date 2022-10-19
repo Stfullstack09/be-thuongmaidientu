@@ -3,13 +3,16 @@ const connectDB = require('./config/connectDB');
 const initAlAuth = require('./routers/auth');
 const appRouter = require('./routers/app');
 const bodyParser = require('body-parser');
+const cookieParser = require('cookie-parser');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 8080;
 
+app.use(cookieParser());
+
 app.use(function (req, res, next) {
-    // Website you wish to allow to connect
+    // Website you wish to allow to connect process.env.LOCAL_HOST
     res.setHeader('Access-Control-Allow-Origin', process.env.LOCAL_HOST);
 
     // Request methods you wish to allow

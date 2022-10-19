@@ -1,5 +1,6 @@
 const bcrypt = require('bcrypt');
 require('dotenv').config();
+const Op = require('Sequelize').Op;
 
 const jwt = require('jsonwebtoken');
 const db = require('../models/index');
@@ -31,7 +32,8 @@ class AuhServices {
                     password: password,
                     firstName: data.firstName,
                     lastName: data.lastName,
-                    lastName: data.lastName,
+                    address: data.address,
+                    gender: data.gender,
                     roleId: 'R3',
                 });
 
@@ -61,11 +63,12 @@ class AuhServices {
 
                 resolve({
                     errCode: 0,
-                    errMessage: 'Successfully',
+                    msg: 'ok',
                     user: {
                         ...user,
-                        accessToken: accessToken,
+                        accessToken,
                     },
+                    accessToken: accessToken,
                     refreshToken,
                 });
             } catch (error) {
@@ -91,6 +94,8 @@ class AuhServices {
                     raw: true,
                 });
 
+                console.log('check user', user);
+
                 if (!user) {
                     return resolve({
                         errCode: 1,
@@ -114,7 +119,7 @@ class AuhServices {
 
                     await db.Token.update(
                         {
-                            ref: refreshToken,
+                            refToken: refreshToken,
                             accessToken: accessToken,
                         },
                         {
@@ -131,6 +136,84 @@ class AuhServices {
                             ...rest,
                             accessToken,
                         },
+                        accessToken,
+                        refreshToken,
+                    });
+                } else {
+                    return resolve({
+                        errCode: 1,
+                        errMessage: 'Wrong password',
+                    });
+                }
+            } catch (error) {
+                reject(error);
+            }
+        });
+    }
+
+    async LoginAdmin(data) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                if (!data.email || !data.password) {
+                    return resolve({
+                        errCode: 1,
+                        errMessage: 'Missing or invalid email',
+                    });
+                }
+
+                const user = await db.User.findOne({
+                    where: {
+                        email: data.email,
+                        roleId: {
+                            [Op.or]: ['R1', 'R2', 'R4'],
+                        },
+                    },
+                    raw: true,
+                });
+
+                console.log('check user', user);
+
+                if (!user) {
+                    return resolve({
+                        errCode: 1,
+                        errMessage: 'Your account is not already existed in the system',
+                    });
+                }
+
+                const checkPassword = bcrypt.compareSync(data.password, user.password);
+
+                if (checkPassword) {
+                    const { password, createdAt, updatedAt, ...rest } = user;
+
+                    const { firstName, lastName, email, roleId } = rest;
+
+                    const { accessToken, refreshToken } = await this.generateToken({
+                        firstName,
+                        lastName,
+                        email,
+                        roleId,
+                    });
+
+                    await db.Token.update(
+                        {
+                            refToken: refreshToken,
+                            accessToken: accessToken,
+                        },
+                        {
+                            where: {
+                                userId: user.id,
+                            },
+                        },
+                    );
+
+                    return resolve({
+                        errCode: 0,
+                        errMessage: 'Successfully',
+                        user: {
+                            ...rest,
+                            accessToken,
+                        },
+                        accessToken,
                         refreshToken,
                     });
                 } else {
@@ -147,7 +230,7 @@ class AuhServices {
 
     async generateToken(user) {
         const accessToken = await jwt.sign(user, process.env.SECRET_KEY_JWT_ACCESS_TOKEN, {
-            expiresIn: '1h',
+            expiresIn: '1d',
         });
 
         const refreshToken = await jwt.sign(user, process.env.SECRET_KEY_JWT_REFRESH_TOKEN, { expiresIn: '365d' });
@@ -181,7 +264,10 @@ class AuhServices {
                     where: {
                         id: TokenUser.userId,
                     },
+                    raw: true,
                 });
+
+                console.log('check user :', user);
 
                 if (!user) {
                     return resolve({
@@ -201,9 +287,11 @@ class AuhServices {
                     roleId,
                 });
 
+                console.log('check new token { accessToken, refreshToken } :', { accessToken, refreshToken });
+
                 await db.Token.update(
                     {
-                        ref: refreshToken,
+                        refToken: refreshToken,
                         accessToken: accessToken,
                     },
                     {
@@ -217,9 +305,10 @@ class AuhServices {
                     errCode: 0,
                     errMessage: 'RefreshToken successfully',
                     user: {
-                        ...user,
+                        ...rest,
                         accessToken,
                     },
+                    accessToken,
                     refreshToken,
                 });
             } catch (error) {
@@ -275,6 +364,57 @@ class AuhServices {
                 return resolve(Valid);
             } catch (error) {
                 console.log(error);
+                reject(error);
+            }
+        });
+    }
+
+    async Logout(userId) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                if (!userId) {
+                    return resolve({
+                        errCode: 1,
+                        msg: 'missing required parameters',
+                    });
+                }
+
+                const user = await db.User.findOne({
+                    where: {
+                        id: userId,
+                    },
+                });
+
+                const checkToken = await db.Token.findOne({
+                    where: {
+                        userId: userId,
+                    },
+                });
+
+                if (user && checkToken) {
+                    await db.Token.update(
+                        {
+                            accessToken: null,
+                            refToken: null,
+                        },
+                        {
+                            where: {
+                                userId: userId,
+                            },
+                        },
+                    );
+
+                    return resolve({
+                        errCode: 0,
+                        msg: 'ok',
+                    });
+                } else {
+                    return resolve({
+                        errCode: 10,
+                        msg: 'error',
+                    });
+                }
+            } catch (error) {
                 reject(error);
             }
         });

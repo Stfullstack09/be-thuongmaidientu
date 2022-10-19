@@ -14,6 +14,9 @@ module.exports = {
             thumbnailId: {
                 type: Sequelize.TEXT('long'),
             },
+            // listImage: {
+            //     type: Sequelize.ARRAY(Sequelize.DECIMAL),
+            // },
             createdAt: {
                 allowNull: false,
                 type: Sequelize.DATE,

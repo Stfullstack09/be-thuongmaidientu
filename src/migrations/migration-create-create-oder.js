@@ -11,22 +11,13 @@ module.exports = {
             userId: {
                 type: Sequelize.INTEGER,
             },
-            firstName: {
-                type: Sequelize.STRING,
-            },
-            lastName: {
-                type: Sequelize.STRING,
-            },
-            email: {
-                type: Sequelize.STRING,
-            },
             phoneNumber: {
                 type: Sequelize.STRING,
             },
-            address: {
+            note: {
                 type: Sequelize.STRING,
             },
-            note: {
+            statusId: {
                 type: Sequelize.STRING,
             },
             totalMoney: {
