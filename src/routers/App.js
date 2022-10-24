@@ -2,6 +2,7 @@ const express = require('express');
 const ProductController = require('../controllers/ProductController');
 const { CreateNewProduct } = require('../controllers/ProductController');
 const SiteController = require('../controllers/SiteController');
+const UserController = require('../controllers/UserController');
 const VerifyToken = require('../services/VerifyToken');
 
 const router = express.Router();
@@ -66,6 +67,12 @@ const appRouter = (app) => {
     );
 
     router.get('/get-totalMoney-checkout', VerifyToken.VerifyTokenAccess, ProductController.GetTotalMoneyCheckout);
+    router.post('/post-data-order', VerifyToken.VerifyTokenAccess, ProductController.PostDataOrder);
+    router.get('/get-product-order', VerifyToken.VerifyTokenAccess, ProductController.GetProductOrder);
+
+    router.get('/get-current-user', VerifyToken.VerifyTokenAccess, UserController.GetCurrentUser);
+
+    router.post('/update-user-current', VerifyToken.VerifyTokenAccess, UserController.UpdateCurrentUser);
 
     app.use('/api/v1/app', router);
 };

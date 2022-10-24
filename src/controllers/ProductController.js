@@ -272,6 +272,34 @@ class ProductController {
             });
         }
     }
+
+    async PostDataOrder(req, res) {
+        try {
+            const data = await ProductServices.PostDataOrder(req.body);
+
+            res.status(200).json(data);
+        } catch (error) {
+            console.log(error);
+            res.status(200).json({
+                errCode: -1,
+                msg: 'error from server',
+            });
+        }
+    }
+
+    async GetProductOrder(req, res) {
+        try {
+            const data = await ProductServices.GetProductOrder(req.body.email);
+
+            res.status(200).json(data);
+        } catch (error) {
+            console.log(error);
+            res.status(200).json({
+                errCode: -1,
+                msg: 'error from server',
+            });
+        }
+    }
 }
 
 module.exports = new ProductController();

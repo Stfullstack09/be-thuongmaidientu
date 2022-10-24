@@ -935,6 +935,119 @@ class ProductServices {
             }
         });
     }
+
+    async PostDataOrder(data) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                if (!data.email || !data.phoneNumber) {
+                    return resolve({
+                        errCode: 1,
+                        msg: 'missing required parameters',
+                    });
+                }
+
+                const user = await db.User.findOne({
+                    where: {
+                        email: data.email,
+                    },
+                });
+
+                if (!user) {
+                    return resolve({
+                        errCode: 2,
+                        msg: 'User not found',
+                    });
+                }
+
+                const products = await db.Cart.findAll({
+                    where: {
+                        userId: user.id,
+                    },
+                    raw: true,
+                });
+
+                if (products && products.length > 0) {
+                    products.map(async (item) => {
+                        await db.Oder.create({
+                            userId: user.id,
+                            phoneNumber: data.phoneNumber,
+                            note: data.note,
+                            address: data.address,
+                            productId: item.productId,
+                            statusId: 'S1',
+                            totalMoney: data.totalMoney,
+                            size: item.size,
+                            count: item.count,
+                        });
+                    });
+
+                    await db.Cart.destroy({
+                        where: {
+                            userId: user.id,
+                        },
+                    });
+                }
+
+                return resolve({
+                    errCode: 0,
+                    msg: 'ok',
+                });
+            } catch (error) {
+                reject(error);
+            }
+        });
+    }
+
+    async GetProductOrder(email) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                if (!email) {
+                    return resolve({
+                        errCode: 1,
+                        msg: 'missing required email',
+                    });
+                }
+
+                const user = await db.User.findOne({
+                    where: {
+                        email,
+                    },
+                    raw: true,
+                });
+
+                if (!user) {
+                    return resolve({
+                        errCode: 3,
+                        msg: 'User not found',
+                    });
+                }
+
+                const data = await db.Oder.findAll({
+                    where: {
+                        userId: user.id,
+                        statusId: 'S1',
+                    },
+                    include: [
+                        {
+                            model: db.Product,
+                            as: 'productDataOder',
+                            attributes: {
+                                exclude: ['thumbnail', 'contentHTML', 'contentTEXT', 'deleted'],
+                            },
+                        },
+                    ],
+                });
+
+                resolve({
+                    errCode: 0,
+                    msg: 'ok',
+                    data,
+                });
+            } catch (error) {
+                reject(error);
+            }
+        });
+    }
 }
 
 module.exports = new ProductServices();

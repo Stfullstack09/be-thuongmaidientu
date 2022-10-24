@@ -17,11 +17,23 @@ module.exports = {
             note: {
                 type: Sequelize.STRING,
             },
+            address: {
+                type: Sequelize.STRING,
+            },
+            productId: {
+                type: Sequelize.INTEGER,
+            },
             statusId: {
                 type: Sequelize.STRING,
             },
             totalMoney: {
                 type: Sequelize.INTEGER,
+            },
+            size: {
+                type: Sequelize.STRING,
+            },
+            count: {
+                type: Sequelize.STRING,
             },
             createdAt: {
                 allowNull: false,

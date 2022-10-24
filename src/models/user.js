@@ -15,6 +15,12 @@ module.exports = (sequelize, DataTypes) => {
                 targetKey: 'keyMap',
                 as: 'addressData',
             });
+
+            User.belongsTo(models.Allcode, {
+                foreignKey: 'gender',
+                targetKey: 'keyMap',
+                as: 'genderData',
+            });
         }
     }
     User.init(
