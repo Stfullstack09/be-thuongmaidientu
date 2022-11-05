@@ -1,14 +1,16 @@
+const otpGenerator = require('otp-generator');
 const db = require('../models');
 const Sequelize = require('sequelize');
 const ConstantBE = require('../utils/constant');
 const handlePriceDisCount = require('../utils/handlePrice');
 const Op = Sequelize.Op;
+const EmailService = require('./EmailServices');
+const { v4: uuidv4 } = require('uuid');
+const { generateToken } = require('./AuhServices');
 
 class ProductServices {
     CreateNewProduct(data) {
         return new Promise(async (resolve, reject) => {
-            console.log('check data.email :', data.email);
-
             try {
                 if (
                     !data.email ||
@@ -55,7 +57,6 @@ class ProductServices {
                     msg: 'ok',
                 });
             } catch (error) {
-                console.log(error);
                 reject(error);
             }
         });
@@ -93,7 +94,6 @@ class ProductServices {
                     data,
                 });
             } catch (error) {
-                console.log(error);
                 reject(error);
             }
         });
@@ -324,8 +324,6 @@ class ProductServices {
     }
 
     async UpdateProductByAdmin(data) {
-        console.log('check data :', data.email);
-
         return new Promise(async (resolve, reject) => {
             try {
                 if (!data.email || !data.title || !data.price || !data.contentTEXT || !data.contentHTML) {
@@ -968,6 +966,7 @@ class ProductServices {
 
                 if (products && products.length > 0) {
                     products.map(async (item) => {
+                        const uuid = await uuidv4();
                         await db.Oder.create({
                             userId: user.id,
                             phoneNumber: data.phoneNumber,
@@ -977,6 +976,7 @@ class ProductServices {
                             statusId: 'S1',
                             totalMoney: data.totalMoney,
                             size: item.size,
+                            uuid: uuid.toLocaleUpperCase(),
                             count: item.count,
                         });
                     });
@@ -1025,7 +1025,6 @@ class ProductServices {
                 const data = await db.Oder.findAll({
                     where: {
                         userId: user.id,
-                        statusId: 'S1',
                     },
                     include: [
                         {
@@ -1035,6 +1034,10 @@ class ProductServices {
                                 exclude: ['thumbnail', 'contentHTML', 'contentTEXT', 'deleted'],
                             },
                         },
+                        {
+                            model: db.Allcode,
+                            as: 'statusData',
+                        },
                     ],
                 });
 
@@ -1042,6 +1045,364 @@ class ProductServices {
                     errCode: 0,
                     msg: 'ok',
                     data,
+                });
+            } catch (error) {
+                reject(error);
+            }
+        });
+    }
+
+    async GetProductsOderByCustomer(email) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                if (!email) {
+                    return resolve({
+                        errCode: 1,
+                        msg: 'missing required email',
+                    });
+                }
+
+                const data = await db.Oder.findAll({
+                    where: {
+                        [Op.or]: [{ statusId: 'S1' }, { statusId: 'S2' }],
+                    },
+                });
+
+                resolve({
+                    errCode: 0,
+                    msg: 'ok',
+                    data,
+                });
+            } catch (error) {
+                reject(error);
+            }
+        });
+    }
+
+    async UpdateStatusOrderByAdminShop(email, status, id) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                if (!email || !id || !status) {
+                    return resolve({
+                        errCode: 1,
+                        msg: 'missing required parameters',
+                    });
+                }
+
+                await db.Oder.update(
+                    {
+                        statusId: status,
+                    },
+                    {
+                        where: {
+                            id,
+                        },
+                    },
+                );
+
+                resolve({
+                    errCode: 0,
+                    msg: 'ok',
+                });
+            } catch (error) {
+                reject(error);
+            }
+        });
+    }
+
+    async UpdateStatusProductByCustomer(email, id) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                if (!email || !id) {
+                    return resolve({
+                        errCode: 1,
+                        msg: 'missing required parameters',
+                    });
+                }
+
+                const user = await db.User.findOne({
+                    where: {
+                        email,
+                    },
+                });
+
+                if (!user) {
+                    return resolve({
+                        errCode: 3,
+                        msg: 'User not found',
+                    });
+                }
+
+                const productOder = await db.Oder.findOne({
+                    where: {
+                        id,
+                    },
+                    raw: true,
+                });
+
+                if (!productOder) {
+                    return resolve({
+                        errCode: 4,
+                        msg: 'product not found',
+                    });
+                }
+
+                await db.Oder.update(
+                    {
+                        statusId: 'S4',
+                    },
+                    {
+                        where: {
+                            id,
+                        },
+                    },
+                );
+
+                resolve({
+                    errCode: 0,
+                    msg: 'ok',
+                });
+            } catch (error) {
+                reject(error);
+            }
+        });
+    }
+
+    async SalesRegistrationByCustomer(email) {
+        let OTP = otpGenerator.generate(6, {
+            digits: false,
+            upperCaseAlphabets: true,
+            lowerCaseAlphabets: false,
+            specialChars: false,
+        });
+
+        return new Promise(async (resolve, reject) => {
+            try {
+                if (!email) {
+                    return resolve({
+                        errCode: 1,
+                        msg: 'missing required parameter',
+                    });
+                }
+
+                const user = await db.User.findOne({
+                    where: {
+                        email,
+                    },
+                    raw: true,
+                });
+
+                if (!user) {
+                    return resolve({
+                        errCode: 3,
+                        msg: 'user not found',
+                    });
+                }
+
+                await db.User.update(
+                    {
+                        uuid: OTP,
+                    },
+                    {
+                        where: {
+                            email,
+                        },
+                    },
+                );
+
+                await EmailService.SendEmailSalesRegistrationByCustomer({
+                    email,
+                    OTP,
+                });
+
+                resolve({
+                    errCode: 0,
+                    msg: 'ok',
+                });
+            } catch (error) {
+                reject(error);
+            }
+        });
+    }
+
+    async CheckEmailValidServices(state) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                if (!state.email || !state.OTP) {
+                    return resolve({
+                        errCode: 1,
+                        msg: 'missing required parameters',
+                    });
+                }
+
+                const user = await db.User.findOne({
+                    where: {
+                        email: state.email,
+                        uuid: state.OTP,
+                        roleId: 'R3',
+                    },
+                    attributes: {
+                        exclude: ['password', 'createdAt', 'updatedAt'],
+                    },
+                    raw: true,
+                });
+
+                if (!user) {
+                    return resolve({
+                        errCode: 3,
+                        msg: 'Wrong my OTP',
+                    });
+                }
+
+                await db.User.update(
+                    {
+                        roleId: 'R2',
+                        uuid: null,
+                    },
+                    {
+                        where: {
+                            email: state.email,
+                            id: user.id,
+                        },
+                    },
+                );
+
+                const userDoneUpdate = await db.User.findOne({
+                    where: {
+                        email: state.email,
+                    },
+                    attributes: {
+                        exclude: ['password', 'createdAt', 'updatedAt'],
+                    },
+                    raw: true,
+                });
+
+                const { accessToken, refreshToken } = await generateToken({
+                    firstName: userDoneUpdate.firstName,
+                    lastName: userDoneUpdate.lastName,
+                    email: userDoneUpdate.email,
+                    roleId: userDoneUpdate.roleId,
+                });
+
+                await db.Token.update(
+                    {
+                        refToken: refreshToken,
+                        accessToken: accessToken,
+                    },
+                    {
+                        where: {
+                            userId: userDoneUpdate.id,
+                        },
+                    },
+                );
+
+                resolve({
+                    errCode: 0,
+                    msg: 'ok',
+                    user: {
+                        ...userDoneUpdate,
+                        accessToken,
+                    },
+                    accessToken,
+                    refreshToken,
+                });
+            } catch (error) {
+                reject(error);
+            }
+        });
+    }
+
+    async GetOderProductsByCustomer(id) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                if (!id) {
+                    return resolve({
+                        errCode: 1,
+                        msg: 'missing required parameter',
+                    });
+                }
+
+                const order = await db.Oder.findOne({
+                    where: {
+                        id,
+                    },
+                    include: [
+                        {
+                            model: db.Product,
+                            as: 'productDataOder',
+                            attributes: {
+                                exclude: ['contentHTML', 'contentTEXT', 'deleted'],
+                            },
+                        },
+                        {
+                            model: db.Allcode,
+                            as: 'statusData',
+                        },
+                        {
+                            model: db.Allcode,
+                            as: 'SizeOderData',
+                        },
+                        {
+                            model: db.User,
+                            as: 'userData',
+                            attributes: {
+                                exclude: [
+                                    'password',
+                                    'avatar',
+                                    'uuid',
+                                    'roleId',
+                                    'createdAt',
+                                    'updatedAt',
+                                    'gender',
+                                    'address',
+                                ],
+                            },
+                        },
+                    ],
+                });
+
+                if (!order) {
+                    return resolve({
+                        errCode: 3,
+                        msg: 'order not found',
+                    });
+                }
+
+                resolve({
+                    errCode: 0,
+                    msg: 'ok',
+                    data: order,
+                });
+            } catch (error) {
+                reject(error);
+            }
+        });
+    }
+
+    async RestoreProductOrderByCustomer(data) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                if (!data.email || !data.id) {
+                    return resolve({
+                        errCode: 1,
+                        msg: 'missing required parameters',
+                    });
+                }
+
+                await db.Oder.update(
+                    {
+                        statusId: 'S1',
+                    },
+                    {
+                        where: {
+                            id: data.id,
+                        },
+                    },
+                );
+
+                resolve({
+                    errCode: 0,
+                    msg: 'ok',
                 });
             } catch (error) {
                 reject(error);

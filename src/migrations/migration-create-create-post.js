@@ -1,7 +1,7 @@
 'use strict';
 module.exports = {
     async up(queryInterface, Sequelize) {
-        await queryInterface.createTable('Oders', {
+        await queryInterface.createTable('Posts', {
             id: {
                 allowNull: false,
                 autoIncrement: true,
@@ -11,31 +11,28 @@ module.exports = {
             userId: {
                 type: Sequelize.INTEGER,
             },
-            phoneNumber: {
+            title: {
                 type: Sequelize.STRING,
             },
-            note: {
+            thumbnail: {
                 type: Sequelize.STRING,
             },
-            address: {
+            isPublic: {
                 type: Sequelize.STRING,
             },
-            productId: {
+            countLike: {
                 type: Sequelize.INTEGER,
             },
-            statusId: {
-                type: Sequelize.STRING,
-            },
-            uuid: {
-                type: Sequelize.STRING,
-            },
-            totalMoney: {
+            countCMT: {
                 type: Sequelize.INTEGER,
             },
-            size: {
-                type: Sequelize.STRING,
+            contentHTML: {
+                type: Sequelize.TEXT('long'),
             },
-            count: {
+            contentTEXT: {
+                type: Sequelize.TEXT('long'),
+            },
+            time: {
                 type: Sequelize.STRING,
             },
             createdAt: {
@@ -49,6 +46,6 @@ module.exports = {
         });
     },
     async down(queryInterface, Sequelize) {
-        await queryInterface.dropTable('Oders');
+        await queryInterface.dropTable('Posts');
     },
 };

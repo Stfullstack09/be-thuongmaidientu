@@ -4,6 +4,7 @@ const initAlAuth = require('./routers/auth');
 const appRouter = require('./routers/app');
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
+const homeRouter = require('./routers/home');
 require('dotenv').config();
 
 const app = express();
@@ -36,6 +37,7 @@ app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 connectDB();
 initAlAuth(app);
 appRouter(app);
+homeRouter(app);
 
 app.listen(PORT, () => {
     console.log('App Starting successfully with port ', PORT);

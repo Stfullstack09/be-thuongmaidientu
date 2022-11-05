@@ -10,6 +10,9 @@ module.exports = (sequelize, DataTypes) => {
         static associate(models) {
             // define association here
             Oder.belongsTo(models.Product, { foreignKey: 'productId', targetKey: 'id', as: 'productDataOder' });
+            Oder.belongsTo(models.Allcode, { foreignKey: 'statusId', targetKey: 'keyMap', as: 'statusData' });
+            Oder.belongsTo(models.Allcode, { foreignKey: 'size', targetKey: 'keyMap', as: 'SizeOderData' });
+            Oder.belongsTo(models.User, { foreignKey: 'userId', targetKey: 'id', as: 'userData' });
         }
     }
     Oder.init(
@@ -21,6 +24,7 @@ module.exports = (sequelize, DataTypes) => {
             productId: DataTypes.INTEGER,
             note: DataTypes.STRING,
             size: DataTypes.STRING,
+            uuid: DataTypes.STRING,
             count: DataTypes.INTEGER,
             totalMoney: DataTypes.INTEGER,
         },

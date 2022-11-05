@@ -1,6 +1,19 @@
 const SiteServices = require('../services/SiteServices');
 
 class SiteController {
+    async home(req, res) {
+        res.send(`
+
+        <div style="height: 100vh; display: flex; justify-content : center; align-items: center;">
+            <div>
+                <h1>Chào Mừng bạn đã đến với backend của UNOMO</h1>
+                <p style="text-align: center;">Vì back-end của chúng tôi không có phần view nên bạn hãy click tại đây để mua hàng <a  href="http://localhost:3000">tại đây</a></p>
+            </div>
+        </div>
+      
+      `);
+    }
+
     async GetListAddress(req, res) {
         try {
             const data = await SiteServices.GetListAddress();

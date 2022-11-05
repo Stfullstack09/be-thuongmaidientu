@@ -13,6 +13,7 @@ const initAlAuth = (app) => {
     router.post('/login-admin', AuthController.LoginAdmin);
     router.post('/logout', VerifyToken.VerifyTokenAccess, AuthController.Logout);
     router.post('/refresh-token', VerifyToken.VerifyToken, AuthController.RefreshToken);
+    // router.get('check-user-login-ds',)
 
     app.use('/api/v1/auth', router);
 };

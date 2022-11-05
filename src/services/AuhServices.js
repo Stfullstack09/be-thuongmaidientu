@@ -94,8 +94,6 @@ class AuhServices {
                     raw: true,
                 });
 
-                console.log('check user', user);
-
                 if (!user) {
                     return resolve({
                         errCode: 1,
@@ -171,8 +169,6 @@ class AuhServices {
                     raw: true,
                 });
 
-                console.log('check user', user);
-
                 if (!user) {
                     return resolve({
                         errCode: 1,
@@ -244,8 +240,6 @@ class AuhServices {
     async RefreshToken(refreshTokenVerify) {
         return new Promise(async (resolve, reject) => {
             try {
-                console.log('check Token :', refreshTokenVerify);
-
                 const TokenUser = await db.Token.findOne({
                     where: {
                         refToken: refreshTokenVerify,
@@ -267,8 +261,6 @@ class AuhServices {
                     raw: true,
                 });
 
-                console.log('check user :', user);
-
                 if (!user) {
                     return resolve({
                         errCode: 5,
@@ -286,8 +278,6 @@ class AuhServices {
                     email,
                     roleId,
                 });
-
-                console.log('check new token { accessToken, refreshToken } :', { accessToken, refreshToken });
 
                 await db.Token.update(
                     {

@@ -32,6 +32,9 @@ module.exports = {
             roleId: {
                 type: Sequelize.STRING,
             },
+            uuid: {
+                type: Sequelize.STRING,
+            },
             createdAt: {
                 allowNull: false,
                 type: Sequelize.DATE,

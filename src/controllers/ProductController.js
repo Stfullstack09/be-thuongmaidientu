@@ -300,6 +300,130 @@ class ProductController {
             });
         }
     }
+
+    async GetProductsOderByCustomer(req, res) {
+        try {
+            const data = await ProductServices.GetProductsOderByCustomer(req.body.email);
+
+            res.status(200).json(data);
+        } catch (error) {
+            console.log(error);
+            res.status(200).json({
+                errCode: -1,
+                msg: 'error from server',
+            });
+        }
+    }
+
+    async UpdateStatusOrderByAdminShop(req, res) {
+        try {
+            const data = await ProductServices.UpdateStatusOrderByAdminShop(
+                req.body.email,
+                req.body.status,
+                req.body.id,
+            );
+
+            res.status(200).json(data);
+        } catch (error) {
+            console.log(error);
+            res.status(200).json({
+                errCode: -1,
+                msg: 'error from server',
+            });
+        }
+    }
+
+    async UpdateStatusProductByCustomer(req, res) {
+        try {
+            const data = await ProductServices.UpdateStatusProductByCustomer(req.body.email, req.body.id);
+
+            res.status(200).json(data);
+        } catch (error) {
+            console.log(error);
+            res.status(200).json({
+                errCode: -1,
+                msg: 'error from server',
+            });
+        }
+    }
+
+    async SalesRegistrationByCustomer(req, res) {
+        try {
+            const data = await ProductServices.SalesRegistrationByCustomer(req.body.email);
+
+            res.status(200).json(data);
+        } catch (error) {
+            console.log(error);
+            res.status(200).json({
+                errCode: -1,
+                msg: 'error from server',
+            });
+        }
+    }
+
+    async CheckEmailValidServices(req, res) {
+        try {
+            const { accessToken, refreshToken, ...rest } = await ProductServices.CheckEmailValidServices(req.body);
+
+            if (refreshToken && accessToken) {
+                res.cookie('refreshToken', refreshToken, {
+                    httpOnly: true,
+                    secure: false,
+                    path: '/',
+                    sameSite: 'strict',
+                    secure: true,
+                    Priority: 'medium',
+                    maxAge: new Date(Number(new Date()) + 31536000000),
+                });
+
+                res.cookie('accessToken', accessToken, {
+                    httpOnly: true,
+                    secure: false,
+                    path: '/',
+                    sameSite: 'strict',
+                    secure: true,
+                    Priority: 'medium',
+                    maxAge: new Date(Number(new Date()) + 31536000000),
+                });
+            }
+
+            res.status(200).json(rest);
+        } catch (error) {
+            console.log(error);
+            res.status(200).json({
+                errCode: -1,
+                msg: 'error from server',
+            });
+        }
+    }
+
+    async GetOderProductsByCustomer(req, res) {
+        try {
+            const data = await ProductServices.GetOderProductsByCustomer(req.query.id);
+
+            res.status(200).json(data);
+        } catch (error) {
+            console.log(error);
+            res.status(200).json({
+                errCode: -1,
+                msg: 'error from server',
+            });
+        }
+    }
+
+    async RestoreProductOrderByCustomer(req, res) {
+        try {
+            const data = await ProductServices.RestoreProductOrderByCustomer(req.body);
+
+            res.status(200).json(data);
+        } catch (error) {
+            console.log(error);
+            res.status(200).json({
+                errCode: -1,
+                msg: 'error from server',
+            });
+        }
+    }
 }
 
 module.exports = new ProductController();

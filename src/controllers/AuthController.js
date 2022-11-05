@@ -146,8 +146,6 @@ class AuthController {
     }
 
     async Logout(req, res) {
-        console.log('check req :', req.body.userId);
-
         try {
             const data = await AuhServices.Logout(req.body.userId);
 

@@ -21,6 +21,14 @@ module.exports = (sequelize, DataTypes) => {
                 targetKey: 'keyMap',
                 as: 'genderData',
             });
+            User.hasMany(models.Oder, {
+                foreignKey: 'userId',
+                as: 'userData',
+            });
+            User.hasMany(models.Post, {
+                foreignKey: 'userId',
+                as: 'userDataPost',
+            });
         }
     }
     User.init(
@@ -33,6 +41,7 @@ module.exports = (sequelize, DataTypes) => {
             address: DataTypes.STRING,
             gender: DataTypes.STRING,
             avatar: DataTypes.TEXT('long'),
+            uuid: DataTypes.STRING,
         },
         {
             sequelize,

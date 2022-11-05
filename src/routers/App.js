@@ -1,4 +1,6 @@
+const { Router } = require('express');
 const express = require('express');
+const PostController = require('../controllers/PostController');
 const ProductController = require('../controllers/ProductController');
 const { CreateNewProduct } = require('../controllers/ProductController');
 const SiteController = require('../controllers/SiteController');
@@ -73,6 +75,55 @@ const appRouter = (app) => {
     router.get('/get-current-user', VerifyToken.VerifyTokenAccess, UserController.GetCurrentUser);
 
     router.post('/update-user-current', VerifyToken.VerifyTokenAccess, UserController.UpdateCurrentUser);
+
+    // admin shop
+    router.get(
+        '/get-products-oder-by-customer',
+        VerifyToken.VerifyTokenAccessRole,
+        ProductController.GetProductsOderByCustomer,
+    );
+    router.post(
+        '/update-status-order-by-admin-shop-toggle-cancel-and-yes',
+        VerifyToken.VerifyTokenAccessRole,
+        ProductController.UpdateStatusOrderByAdminShop,
+    );
+
+    router.post(
+        '/update-status-products-by-customer',
+        VerifyToken.VerifyTokenAccess,
+        ProductController.UpdateStatusProductByCustomer,
+    );
+
+    router.post(
+        '/sales-registration-by-customer',
+        VerifyToken.VerifyTokenAccess,
+        ProductController.SalesRegistrationByCustomer,
+    );
+
+    router.post(
+        '/check-email-valid-services',
+        VerifyToken.VerifyTokenAccess,
+        ProductController.CheckEmailValidServices,
+    );
+
+    router.get(
+        '/get-oder-products-by-customer',
+        VerifyToken.VerifyTokenAccess,
+        ProductController.GetOderProductsByCustomer,
+    );
+
+    router.post(
+        '/restore-product-order-by-customer',
+        VerifyToken.VerifyTokenAccess,
+        ProductController.RestoreProductOrderByCustomer,
+    );
+
+    router.get('/get-post-related-limit', PostController.GetPostRelated);
+    router.get('/get-all-posts', PostController.GetAllPosts);
+    router.get('/get-detail-post', PostController.GetDetailPost);
+    router.post('/create-new-post', VerifyToken.VerifyTokenAccess, PostController.CreateNewPost);
+    router.patch('/update-edit-post', VerifyToken.VerifyTokenAccess, PostController.UpdateEditPost);
+    router.delete('/deleted-post-by-id', VerifyToken.VerifyTokenAccess, PostController.DeletedPost);
 
     app.use('/api/v1/app', router);
 };
