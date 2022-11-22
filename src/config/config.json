@@ -1,10 +1,10 @@
 {
     "development": {
-        "username": "root",
-        "password": null,
-        "database": "tmdientu",
-        "host": "127.0.0.1",
-        "dialect": "mysql",
+        "username": "truongson09",
+        "password": "st6k8V0NA8NdzsxkMyvAVhYY4RfCMuLx",
+        "database": "betmdt09",
+        "host": "dpg-cdueg9ha6gdv3sqbf1eg-a",
+        "dialect": "postgres",
         "logging": false
     },
     "test": {

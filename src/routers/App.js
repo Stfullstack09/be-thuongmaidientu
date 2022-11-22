@@ -124,6 +124,9 @@ const appRouter = (app) => {
     router.post('/create-new-post', VerifyToken.VerifyTokenAccess, PostController.CreateNewPost);
     router.patch('/update-edit-post', VerifyToken.VerifyTokenAccess, PostController.UpdateEditPost);
     router.delete('/deleted-post-by-id', VerifyToken.VerifyTokenAccess, PostController.DeletedPost);
+    router.get('/get-all-post-manage', VerifyToken.VerifyTokenAccess, PostController.GetAllPostManage);
+    router.patch('/update-status-post-manage', VerifyToken.VerifyTokenAccess, PostController.UpdateStatusPost);
+    router.get('/get-detail-post-edit-by-id', VerifyToken.VerifyTokenAccess, PostController.GetDetailPostEditById);
 
     app.use('/api/v1/app', router);
 };

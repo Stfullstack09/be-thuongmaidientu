@@ -24,6 +24,10 @@ class UserServices {
                             model: db.Allcode,
                             as: 'addressData',
                         },
+                        {
+                            model: db.Allcode,
+                            as: 'roleData',
+                        },
                     ],
                     attributes: {
                         exclude: ['password', 'createdAt', 'updatedAt'],

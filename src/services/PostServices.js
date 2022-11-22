@@ -60,24 +60,48 @@ class PostServices {
     async UpdateEditPost(data) {
         return new Promise(async (resolve, reject) => {
             try {
-                if (!data.id || !data.title || !data.contentHTML || !data.contentTEXT || !data.time) {
+                if (
+                    !data.email ||
+                    !data.id ||
+                    !data.title ||
+                    !data.contentHTML ||
+                    !data.contentTEXT ||
+                    !data.time ||
+                    !data.thumbnail
+                ) {
                     return resolve({
                         errCode: 1,
                         msg: 'Missing required parameters',
                     });
                 }
 
+                const user = await db.User.findOne({
+                    where: {
+                        email: data.email,
+                    },
+                    raw: true,
+                });
+
+                if (!user) {
+                    return resolve({
+                        errCode: 3,
+                        msg: 'user not found',
+                    });
+                }
+
                 await db.Post.update(
                     {
+                        thumbnail: data.thumbnail,
                         title: data.title,
                         contentHTML: data.contentHTML,
                         contentTEXT: data.contentTEXT,
                         time: data.time,
-                        deleted: null,
-                        isPublic: 1,
                     },
                     {
-                        id: data.id,
+                        where: {
+                            id: data.id,
+                            userId: user.id,
+                        },
                     },
                 );
 
@@ -145,6 +169,31 @@ class PostServices {
                     });
                 }
 
+                const post = await db.Post.findOne({
+                    where: {
+                        id,
+                        isPublic: 1,
+                    },
+                });
+
+                if (!post) {
+                    return resolve({
+                        errCode: 4,
+                        msg: 'There is no access to this resource or the resource does not exist!',
+                    });
+                }
+
+                await db.Post.update(
+                    {
+                        countLike: post.countLike + 1,
+                    },
+                    {
+                        where: {
+                            id,
+                        },
+                    },
+                );
+
                 const data = await db.Post.findOne({
                     where: {
                         id,
@@ -184,16 +233,15 @@ class PostServices {
 
                 const data = await db.Post.findAll(
                     {
-                        order: [[Sequelize.literal('RAND()')]],
-                        limit: +limit,
-                        attributes: {
-                            exclude: ['isPublic', 'deleted'],
+                        where: {
+                            isPublic: 1,
                         },
                     },
                     {
-                        where: {
-                            isPublic: 1,
-                            deleted: null,
+                        order: [[Sequelize.literal('RAND()')]],
+                        limit: +limit,
+                        attributes: {
+                            exclude: ['isPublic'],
                         },
                     },
                 );
@@ -231,6 +279,184 @@ class PostServices {
                     errCode: 0,
                     msg: 'ok',
                     data,
+                });
+            } catch (error) {
+                reject(error);
+            }
+        });
+    }
+
+    async GetAllPostManage(email, limit, page) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                if (!email || !limit || !page) {
+                    return resolve({
+                        errCode: 1,
+                        msg: 'Missing required parameters',
+                    });
+                }
+
+                const offset = (page - 1) * limit;
+                let isValidNextPage = true;
+                let countQuery = page * limit;
+
+                const user = await db.User.findOne({
+                    where: {
+                        email,
+                    },
+                    raw: true,
+                });
+
+                if (!user) {
+                    return resolve({
+                        errCode: 3,
+                        msg: 'User not found',
+                    });
+                }
+
+                const post = await db.Post.findAll({
+                    where: {
+                        userId: user.id,
+                    },
+                    offset,
+                    limit: +limit,
+                    attributes: {
+                        exclude: ['thumbnail', 'countCMT', 'contentHTML', 'contentTEXT', 'createdAt', 'updatedAt'],
+                    },
+                });
+
+                if (post && post.length === 0) {
+                    return resolve({
+                        errCode: 4,
+                        msg: 'No records found',
+                    });
+                }
+
+                const count = await db.Post.count({
+                    where: {
+                        userId: user.id,
+                    },
+                });
+
+                if (+countQuery >= +count) {
+                    isValidNextPage = false;
+                }
+
+                resolve({
+                    errCode: 0,
+                    msg: 'ok',
+                    data: post,
+                    TotalRecords: count,
+                    isValidNextPage,
+                });
+            } catch (error) {
+                reject(error);
+            }
+        });
+    }
+
+    async UpdateStatusPost(data) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                if (!data.email | !data.id || !data.status) {
+                    return resolve({
+                        errCode: 1,
+                        msg: 'Missing required parameters',
+                    });
+                }
+
+                const user = await db.User.findOne({
+                    where: {
+                        email: data.email,
+                    },
+                    raw: true,
+                });
+
+                if (!user) {
+                    return resolve({
+                        errCode: 3,
+                        msg: 'User not found',
+                    });
+                }
+
+                await db.Post.update(
+                    {
+                        isPublic: data.status,
+                    },
+                    {
+                        where: {
+                            id: data.id,
+                            userId: user.id,
+                        },
+                    },
+                );
+
+                const post = await db.Post.findOne({
+                    where: {
+                        id: data.id,
+                        userId: user.id,
+                    },
+                    attributes: {
+                        exclude: ['thumbnail', 'countCMT', 'contentHTML', 'contentTEXT', 'createdAt', 'updatedAt'],
+                    },
+                });
+
+                resolve({
+                    errCode: 0,
+                    msg: 'ok',
+                    post,
+                });
+            } catch (error) {
+                reject(error);
+            }
+        });
+    }
+
+    async GetDetailPostEditById(email, id) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                if (!email || !id) {
+                    return resolve({
+                        errCode: 1,
+                        msg: 'Missing required parameters',
+                    });
+                }
+
+                const user = await db.User.findOne({
+                    where: {
+                        email,
+                    },
+                    raw: true,
+                });
+
+                if (!user) {
+                    return resolve({
+                        errCode: 3,
+                        msg: 'user not found',
+                    });
+                }
+
+                const post = await db.Post.findOne({
+                    where: {
+                        id,
+                        userId: user.id,
+                    },
+                    attributes: {
+                        exclude: ['createdAt', 'updatedAt'],
+                    },
+                });
+
+                if (!post) {
+                    return resolve({
+                        errCode: 4,
+                        msg: 'There is no access to this resource or the resource does not exist!',
+                    });
+                }
+
+                resolve({
+                    errCode: 0,
+                    msg: 'ok',
+                    data: post,
                 });
             } catch (error) {
                 reject(error);

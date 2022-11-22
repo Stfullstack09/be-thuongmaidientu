@@ -265,10 +265,10 @@ class ProductServices {
         });
     }
 
-    async GetAllProductByAdmin(email) {
+    async GetAllProductByAdmin(email, limit, page) {
         return new Promise(async (resolve, reject) => {
             try {
-                if (!email) {
+                if (!email || !limit || !page) {
                     return resolve({
                         errCode: 0,
                         msg: 'missing required parameters',
@@ -289,11 +289,17 @@ class ProductServices {
                     });
                 }
 
+                const offset = (page - 1) * limit;
+                let isValidNextPage = true;
+                let countQuery = page * limit;
+
                 const data = await db.Product.findAll({
                     where: {
                         userId: user.id,
                         deleted: null,
                     },
+                    offset,
+                    limit: +limit,
                     include: [
                         {
                             model: db.Allcode,
@@ -301,7 +307,7 @@ class ProductServices {
                         },
                     ],
                     attributes: {
-                        exclude: ['deleted'],
+                        exclude: ['deleted', 'contentHTML', 'thumbnail', 'contentTEXT'],
                     },
                 });
 
@@ -312,10 +318,22 @@ class ProductServices {
                     });
                 }
 
+                const count = await db.Product.count({
+                    where: {
+                        userId: user.id,
+                    },
+                });
+
+                if (+countQuery >= +count) {
+                    isValidNextPage = false;
+                }
+
                 resolve({
                     errCode: 0,
                     msg: 'ok',
                     data,
+                    TotalRecords: count,
+                    isValidNextPage,
                 });
             } catch (error) {
                 reject(error);
@@ -353,7 +371,7 @@ class ProductServices {
                         price: data.price,
                         contentHTML: data.contentHTML,
                         contentTEXT: data.contentTEXT,
-                        discount: data.discount,
+                        discount: data.disCount,
                         categoryId: data.categoryId,
                     },
                     {
@@ -961,11 +979,26 @@ class ProductServices {
                     where: {
                         userId: user.id,
                     },
-                    raw: true,
+                    include: [
+                        {
+                            model: db.Product,
+                            as: 'productData',
+                            attributes: {
+                                exclude: ['thumbnail', 'contentHTML', 'contentTEXT', 'deleted'],
+                            },
+                        },
+                    ],
+                    raw: false,
                 });
 
                 if (products && products.length > 0) {
                     products.map(async (item) => {
+                        const timeOder = new Date(
+                            new Date().toLocaleString('en', { timeZone: 'Asia/Ho_Chi_Minh' }),
+                        ).getTime();
+
+                        console.log('check time :', timeOder);
+
                         const uuid = await uuidv4();
                         await db.Oder.create({
                             userId: user.id,
@@ -978,6 +1011,9 @@ class ProductServices {
                             size: item.size,
                             uuid: uuid.toLocaleUpperCase(),
                             count: item.count,
+                            price: item.productData.price,
+                            discount: item.productData.discount,
+                            timeOder,
                         });
                     });
 
@@ -1030,9 +1066,7 @@ class ProductServices {
                         {
                             model: db.Product,
                             as: 'productDataOder',
-                            attributes: {
-                                exclude: ['thumbnail', 'contentHTML', 'contentTEXT', 'deleted'],
-                            },
+                            attributes: ['title'],
                         },
                         {
                             model: db.Allcode,
@@ -1330,9 +1364,7 @@ class ProductServices {
                         {
                             model: db.Product,
                             as: 'productDataOder',
-                            attributes: {
-                                exclude: ['contentHTML', 'contentTEXT', 'deleted'],
-                            },
+                            attributes: ['title', 'thumbnail'],
                         },
                         {
                             model: db.Allcode,
@@ -1382,16 +1414,35 @@ class ProductServices {
     async RestoreProductOrderByCustomer(data) {
         return new Promise(async (resolve, reject) => {
             try {
-                if (!data.email || !data.id) {
+                if (!data.email || !data.id || !data.productId) {
                     return resolve({
                         errCode: 1,
                         msg: 'missing required parameters',
                     });
                 }
 
+                const product = await db.Product.findOne({
+                    where: {
+                        id: data.productId,
+                    },
+                    attributes: ['price', 'discount'],
+                    raw: true,
+                });
+
+                console.log('check product :', product);
+
+                if (!product) {
+                    return resolve({
+                        errCode: 3,
+                        msg: 'product not found',
+                    });
+                }
+
                 await db.Oder.update(
                     {
                         statusId: 'S1',
+                        price: product.price,
+                        discount: product.discount,
                     },
                     {
                         where: {

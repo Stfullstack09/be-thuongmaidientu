@@ -38,6 +38,7 @@ class VerifyToken {
 
             const accessToken = req.cookies.accessToken || '';
 
+
             if (!accessToken) {
                 return res.status(401).json({
                     errCode: 1,

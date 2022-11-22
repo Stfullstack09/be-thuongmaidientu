@@ -29,8 +29,26 @@ module.exports = {
             uuid: {
                 type: Sequelize.STRING,
             },
+            price: {
+                type: Sequelize.INTEGER,
+            },
+            discount: {
+                type: Sequelize.INTEGER,
+            },
             totalMoney: {
                 type: Sequelize.INTEGER,
+            },
+            timeOder: {
+                type: Sequelize.STRING,
+            },
+            timeBank: {
+                type: Sequelize.STRING,
+            },
+            timeVC: {
+                type: Sequelize.STRING,
+            },
+            timeDone: {
+                type: Sequelize.STRING,
             },
             size: {
                 type: Sequelize.STRING,

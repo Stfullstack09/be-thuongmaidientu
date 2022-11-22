@@ -17,6 +17,12 @@ module.exports = (sequelize, DataTypes) => {
             });
 
             User.belongsTo(models.Allcode, {
+                foreignKey: 'roleId',
+                targetKey: 'keyMap',
+                as: 'roleData',
+            });
+
+            User.belongsTo(models.Allcode, {
                 foreignKey: 'gender',
                 targetKey: 'keyMap',
                 as: 'genderData',

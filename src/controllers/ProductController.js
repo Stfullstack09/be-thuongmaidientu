@@ -79,7 +79,7 @@ class ProductController {
 
     async GetAllProductByAdmin(req, res) {
         try {
-            const data = await ProductServices.GetAllProductByAdmin(req.body.email);
+            const data = await ProductServices.GetAllProductByAdmin(req.body.email, req.query.limit, req.query.page);
 
             res.status(200).json(data);
         } catch (error) {
