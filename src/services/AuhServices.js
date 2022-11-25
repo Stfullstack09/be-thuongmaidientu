@@ -1,6 +1,6 @@
 const bcrypt = require('bcrypt');
 require('dotenv').config();
-const Op = require('Sequelize').Op;
+const Op = require('sequelize').Op;
 
 const jwt = require('jsonwebtoken');
 const db = require('../models/index');
