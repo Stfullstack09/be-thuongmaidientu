@@ -20,6 +20,7 @@ module.exports = (sequelize, DataTypes) => {
             note: DataTypes.STRING,
             count: DataTypes.INTEGER,
             size: DataTypes.STRING,
+            shopId: DataTypes.INTEGER,
         },
         {
             sequelize,

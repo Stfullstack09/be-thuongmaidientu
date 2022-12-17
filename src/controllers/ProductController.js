@@ -424,6 +424,77 @@ class ProductController {
             });
         }
     }
+
+    async SearchProductInShop(req, res) {
+        try {
+            const data = await ProductServices.SearchProductInShop(req.body.email, req.query.q);
+
+            res.status(200).json(data);
+        } catch (error) {
+            console.log(error);
+            res.status(200).json({
+                errCode: -1,
+                msg: 'Error from server',
+            });
+        }
+    }
+
+    async GetAllInfomationCustomer(req, res) {
+        try {
+            const data = await ProductServices.GetAllInfomationCustomer(req.body.email);
+
+            res.status(200).json(data);
+        } catch (error) {
+            console.log(error);
+
+            res.status(200).json({
+                errCode: -1,
+                msg: 'Error from server',
+            });
+        }
+    }
+
+    async SendEmailToCustomer(req, res) {
+        try {
+            const data = await ProductServices.SendEmailToCustomer(req.body);
+
+            res.status(200).json(data);
+        } catch (error) {
+            console.log(error);
+            res.status(200).json({
+                errCode: -1,
+                msg: 'Error from server',
+            });
+        }
+    }
+
+    async UpdateStatusProductOrder(req, res) {
+        try {
+            const data = await ProductServices.UpdateStatusProductOrder(req.body);
+
+            res.status(200).json(data);
+        } catch (error) {
+            console.log(error);
+            res.status(200).json({
+                errCode: -1,
+                msg: 'Error from server',
+            });
+        }
+    }
+
+    async GetProductOrderByAdminShop(req, res) {
+        try {
+            const data = await ProductServices.GetProductOrderByAdminShop(req.body.email, req.query.type);
+
+            res.status(200).json(data);
+        } catch (error) {
+            console.log(error);
+            res.status(200).json({
+                errCode: -1,
+                msg: 'Error from server',
+            });
+        }
+    }
 }
 
 module.exports = new ProductController();

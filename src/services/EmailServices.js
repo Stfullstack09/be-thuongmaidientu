@@ -36,6 +36,28 @@ class EmailService {
         
         `;
     }
+
+    async SendEmailToCustomer(data) {
+        let transporter = nodemailer.createTransport({
+            host: 'smtp.gmail.com',
+            port: 587,
+            // debug: true,
+            // logger: true,
+            secure: false, // true for 465, false for other ports
+            auth: {
+                user: process.env.EMAIL_APP_NAME, // generated ethereal user
+                pass: process.env.EMAIL_APP_PASSWORD, // generated ethereal password
+            },
+        });
+
+        // send mail with defined transport object
+        let info = await transporter.sendMail({
+            from: 'UNOMO Thương Mại Điện Tử', // sender address
+            to: data.email, // list of receivers
+            subject: `Shop ${data.user.firstName} ${data.user.lastName} xin gửi thư đến bạn ❤️😁`, // Subject line
+            html: data.contentHtml, // html body
+        });
+    }
 }
 
 module.exports = new EmailService();

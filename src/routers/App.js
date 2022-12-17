@@ -128,6 +128,26 @@ const appRouter = (app) => {
     router.patch('/update-status-post-manage', VerifyToken.VerifyTokenAccess, PostController.UpdateStatusPost);
     router.get('/get-detail-post-edit-by-id', VerifyToken.VerifyTokenAccess, PostController.GetDetailPostEditById);
 
+    // kênh người bán || seller channel
+
+    router.get('/search-product-in-shop', VerifyToken.VerifyTokenAccess, ProductController.SearchProductInShop);
+    router.get(
+        '/get-all-infomation-customers',
+        VerifyToken.VerifyTokenAccess,
+        ProductController.GetAllInfomationCustomer,
+    );
+    router.post('/send-data-email-by-admin', VerifyToken.VerifyTokenAccessRole, ProductController.SendEmailToCustomer);
+    router.post(
+        '/update-status-product-order',
+        VerifyToken.VerifyTokenAccess,
+        ProductController.UpdateStatusProductOrder,
+    );
+    router.get(
+        '/get-product-order-by-admin-shop',
+        VerifyToken.VerifyTokenAccessRole,
+        ProductController.GetProductOrderByAdminShop,
+    );
+
     app.use('/api/v1/app', router);
 };
 

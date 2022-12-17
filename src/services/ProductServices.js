@@ -7,6 +7,7 @@ const Op = Sequelize.Op;
 const EmailService = require('./EmailServices');
 const { v4: uuidv4 } = require('uuid');
 const { generateToken } = require('./AuhServices');
+const EmailServices = require('./EmailServices');
 
 class ProductServices {
     CreateNewProduct(data) {
@@ -599,9 +600,11 @@ class ProductServices {
     }
 
     async AddProductToCart(data) {
+        console.log('check data :', data);
+
         return new Promise(async (resolve, reject) => {
             try {
-                if (!data.productId || !data.userId || !data.count || !data.size) {
+                if (!data.productId || !data.userId || !data.count || !data.size || !data.shopId) {
                     resolve({
                         errCode: 1,
                         msg: 'missing required parameters',
@@ -622,12 +625,14 @@ class ProductServices {
                         userId: data.userId,
                         count: data.count,
                         size: data.size,
+                        shopId: data.shopId,
                     });
                 } else {
                     await db.Cart.update(
                         {
                             count: +product.count + +data.count,
                             size: data.size,
+                            shopId: data.shopId,
                         },
                         {
                             where: {
@@ -997,8 +1002,6 @@ class ProductServices {
                             new Date().toLocaleString('en', { timeZone: 'Asia/Ho_Chi_Minh' }),
                         ).getTime();
 
-                        console.log('check time :', timeOder);
-
                         const uuid = await uuidv4();
                         await db.Oder.create({
                             userId: user.id,
@@ -1014,6 +1017,7 @@ class ProductServices {
                             price: item.productData.price,
                             discount: item.productData.discount,
                             timeOder,
+                            shopId: item.shopId,
                         });
                     });
 
@@ -1429,8 +1433,6 @@ class ProductServices {
                     raw: true,
                 });
 
-                console.log('check product :', product);
-
                 if (!product) {
                     return resolve({
                         errCode: 3,
@@ -1443,6 +1445,8 @@ class ProductServices {
                         statusId: 'S1',
                         price: product.price,
                         discount: product.discount,
+                        timeOder: new Date(new Date().toLocaleString('en', { timeZone: 'Asia/Ho_Chi_Minh' })).getTime(),
+                        timeBank: null,
                     },
                     {
                         where: {
@@ -1454,6 +1458,366 @@ class ProductServices {
                 resolve({
                     errCode: 0,
                     msg: 'ok',
+                });
+            } catch (error) {
+                reject(error);
+            }
+        });
+    }
+
+    async SearchProductInShop(email, q) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                if (!email || !q) {
+                    return resolve({
+                        errCode: 1,
+                        msg: 'Missing required parameters',
+                    });
+                }
+
+                const user = await db.User.findOne({
+                    where: {
+                        email,
+                    },
+                });
+
+                if (!user) {
+                    return resolve({
+                        errCode: 3,
+                        msg: 'user not found',
+                    });
+                }
+
+                const data = await db.Product.findAll({
+                    where: {
+                        title: {
+                            [Op.like]: `%${q}%`,
+                        },
+                        userId: user.id,
+                    },
+                    attributes: {
+                        exclude: ['contentHTML', 'contentTEXT', 'deleted'],
+                    },
+                });
+
+                resolve({
+                    errCode: 0,
+                    msg: 'ok',
+                    data,
+                });
+            } catch (error) {
+                reject(error);
+            }
+        });
+    }
+
+    async GetAllInfomationCustomer(email) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                if (!email) {
+                    return resolve({
+                        errCode: 1,
+                        msg: 'Missing required parameter',
+                    });
+                }
+
+                const user = await db.User.findOne({
+                    where: {
+                        email, //ES6
+                    },
+                });
+
+                if (!user) {
+                    return resolve({
+                        errCode: 3,
+                        msg: 'User is not exist',
+                    });
+                }
+
+                const DataUser = await db.Oder.findAll({
+                    where: {
+                        shopId: user.id,
+                    },
+                    include: [
+                        {
+                            model: db.User,
+                            as: 'userData',
+                            attributes: ['email', 'firstName', 'lastName', 'avatar'],
+                        },
+                        {
+                            model: db.Product,
+                            as: 'productDataOder',
+                            attributes: ['title', 'thumbnail'],
+                        },
+                        {
+                            model: db.Allcode,
+                            as: 'statusData',
+                        },
+                    ],
+                });
+
+                if (!DataUser) {
+                    return resolve({
+                        errCode: 4,
+                        msg: 'User is not exist',
+                    });
+                }
+
+                resolve({
+                    errCode: 0,
+                    msg: 'ok',
+                    data: DataUser,
+                });
+            } catch (error) {
+                reject(error);
+            }
+        });
+    }
+
+    async SendEmailToCustomer(data) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                if (!data.contentHtml || !data.emailSend || !data.email) {
+                    return resolve({
+                        errCode: 1,
+                        msg: 'Missing required parameters',
+                    });
+                }
+
+                const user = await db.User.findOne({
+                    where: {
+                        email: data.email,
+                    },
+                });
+
+                if (!user) {
+                    return resolve({
+                        errCode: 3,
+                        msg: 'user not found',
+                    });
+                }
+
+                const state = {
+                    contentHtml: data.contentHtml,
+                    email: data.emailSend,
+                    user,
+                };
+
+                await EmailServices.SendEmailToCustomer(state);
+
+                resolve({
+                    errCode: 0,
+                    msg: 'ok',
+                });
+            } catch (error) {
+                reject(error);
+            }
+        });
+    }
+
+    async UpdateStatusProductOrder(data) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                if (!data.email || !data.id || !data.time || !data.type) {
+                    return resolve({
+                        errCode: 1,
+                        msg: 'missing required parameters',
+                    });
+                }
+
+                const productOrder = await db.Oder.findOne({
+                    where: {
+                        id: data.id,
+                    },
+                });
+
+                if (!productOrder) {
+                    return resolve({
+                        errCode: 4,
+                        msg: 'product order not found',
+                    });
+                }
+
+                switch (data.type) {
+                    case 'bank': {
+                        await db.Oder.update(
+                            {
+                                statusId: 'S2',
+                                timeBank: data.time,
+                            },
+                            {
+                                where: {
+                                    id: data.id,
+                                },
+                            },
+                        );
+                        resolve({
+                            errCode: 0,
+                            msg: 'ok',
+                        });
+                        break;
+                    }
+
+                    case 'vc': {
+                        if (!productOrder.timeBank) {
+                            return resolve({
+                                errCode: 5,
+                                msg: 'You have not confirmed the payment so you cannot change the delivery status to the carrier',
+                            });
+                        }
+
+                        await db.Oder.update(
+                            {
+                                statusId: 'S3',
+                                timeVC: data.time,
+                            },
+                            {
+                                where: {
+                                    id: data.id,
+                                },
+                            },
+                        );
+                        resolve({
+                            errCode: 0,
+                            msg: 'ok',
+                        });
+                        break;
+                    }
+
+                    case 'done': {
+                        await db.Oder.update(
+                            {
+                                statusId: 'S6',
+                                timeDone: data.time,
+                            },
+                            {
+                                where: {
+                                    id: data.id,
+                                },
+                            },
+                        );
+                        resolve({
+                            errCode: 0,
+                            msg: 'ok',
+                        });
+                        break;
+                    }
+
+                    case 'cancel': {
+                        await db.Oder.update(
+                            {
+                                statusId: 'S5',
+                            },
+                            {
+                                where: {
+                                    id: data.id,
+                                },
+                            },
+                        );
+                        resolve({
+                            errCode: 0,
+                            msg: 'ok',
+                        });
+                        break;
+                    }
+
+                    default:
+                        return resolve({
+                            errCode: 4,
+                            msg: 'Invalid type',
+                        });
+                }
+            } catch (error) {
+                reject(error);
+            }
+        });
+    }
+
+    async GetProductOrderByAdminShop(email, type) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                if (!email || !type) {
+                    return resolve({
+                        errCode: 1,
+                        msg: 'Missing required parameters',
+                    });
+                }
+
+                const user = await db.User.findOne({
+                    where: {
+                        email,
+                    },
+                    raw: true,
+                });
+
+                if (!user) {
+                    return resolve({
+                        errCode: 3,
+                        msg: 'user not found',
+                    });
+                }
+
+                let productOrder = [];
+
+                if (type === 'cancel') {
+                    productOrder = await db.Oder.findAll({
+                        where: {
+                            shopId: user.id,
+                            [Op.or]: [
+                                {
+                                    statusId: 'S4',
+                                },
+                                {
+                                    statusId: 'S5',
+                                },
+                            ],
+                        },
+                        include: [
+                            {
+                                model: db.User,
+                                as: 'userData',
+                                attributes: ['email', 'firstName', 'lastName', 'avatar'],
+                            },
+                            {
+                                model: db.Product,
+                                as: 'productDataOder',
+                                attributes: ['title', 'thumbnail'],
+                            },
+                            {
+                                model: db.Allcode,
+                                as: 'statusData',
+                            },
+                        ],
+                    });
+                } else {
+                    productOrder = await db.Oder.findAll({
+                        where: {
+                            shopId: user.id,
+                            statusId: type,
+                        },
+                        include: [
+                            {
+                                model: db.User,
+                                as: 'userData',
+                                attributes: ['email', 'firstName', 'lastName', 'avatar'],
+                            },
+                            {
+                                model: db.Product,
+                                as: 'productDataOder',
+                                attributes: ['title', 'thumbnail'],
+                            },
+                            {
+                                model: db.Allcode,
+                                as: 'statusData',
+                            },
+                        ],
+                    });
+                }
+
+                resolve({
+                    errCode: 0,
+                    msg: 'ok',
+                    data: productOrder,
                 });
             } catch (error) {
                 reject(error);
